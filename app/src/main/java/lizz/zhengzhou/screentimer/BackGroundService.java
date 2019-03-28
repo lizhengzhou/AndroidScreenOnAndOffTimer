@@ -1,6 +1,7 @@
 package lizz.zhengzhou.screentimer;
 
 import android.app.Service;
+import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
@@ -10,6 +11,7 @@ import android.util.Log;
 public class BackGroundService extends Service {
 
     final String tag = "BackGroundService";
+    DevicePolicyManager policyManager;
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
 
@@ -28,9 +30,7 @@ public class BackGroundService extends Service {
         super.onCreate();
 
         powerManager = (PowerManager) this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag + ":wakeLockTag");
-        wakeLock.acquire();
-
+        policyManager = (DevicePolicyManager) this.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class BackGroundService extends Service {
                             Log.i(tag, "isScreenOn：" + screen);
                         }
 
-                        Thread.sleep(5000);
+                        Thread.sleep(30000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -65,11 +65,22 @@ public class BackGroundService extends Service {
     @Override
     public void onDestroy() {
 
-        if (wakeLock != null) {
+        super.onDestroy();
+    }
+
+
+    public void turnOnScreen() {
+        Log.v(tag, "ON!");
+
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, tag + ":wakeLockTag");
+            wakeLock.acquire();
             wakeLock.release();
-            wakeLock = null;
         }
 
-        super.onDestroy();
+    }
+
+    public void turnOffScreen() {
+        policyManager.lockNow();
     }
 }
