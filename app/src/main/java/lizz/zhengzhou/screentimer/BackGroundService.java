@@ -49,6 +49,12 @@ public class BackGroundService extends Service {
                         if (powerManager != null) {
                             boolean screen = powerManager.isScreenOn();
                             Log.i(tag, "isScreenOn：" + screen);
+                            if(screen)
+                            {
+                                turnOffScreen();
+                            }else{
+                                turnOnScreen();
+                            }
                         }
 
                         Thread.sleep(30000);
@@ -60,12 +66,6 @@ public class BackGroundService extends Service {
         }.start();
 
         return super.onStartCommand(intent, flags, startId);
-    }
-
-    @Override
-    public void onDestroy() {
-
-        super.onDestroy();
     }
 
 
