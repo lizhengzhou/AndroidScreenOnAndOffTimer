@@ -1,5 +1,6 @@
 package lizz.zhengzhou.screentimer;
 
+import android.app.KeyguardManager;
 import android.app.Service;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
@@ -13,7 +14,9 @@ public class BackGroundService extends Service {
     final String tag = "BackGroundService";
     DevicePolicyManager policyManager;
     PowerManager powerManager;
+    KeyguardManager keyguardManager;
     PowerManager.WakeLock wakeLock;
+    boolean CanRun = false;
 
     public BackGroundService() {
     }
@@ -31,17 +34,21 @@ public class BackGroundService extends Service {
 
         powerManager = (PowerManager) this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
         policyManager = (DevicePolicyManager) this.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+        keyguardManager = (KeyguardManager)this.getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
+
+        wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, tag + ":wakeLockTag");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(tag, "onStartCommand");
 
+        CanRun = true;
         new Thread() {
             @Override
             public void run() {
 
-                while (true) {
+                while (CanRun) {
                     try {
 
                         Log.i(tag, "DoSomething");
@@ -49,10 +56,9 @@ public class BackGroundService extends Service {
                         if (powerManager != null) {
                             boolean screen = powerManager.isScreenOn();
                             Log.i(tag, "isScreenOn：" + screen);
-                            if(screen)
-                            {
+                            if (screen) {
                                 turnOffScreen();
-                            }else{
+                            } else {
                                 turnOnScreen();
                             }
                         }
@@ -68,19 +74,34 @@ public class BackGroundService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    @Override
+    public void onDestroy() {
+        CanRun = false;
+        super.onDestroy();
+    }
 
     public void turnOnScreen() {
         Log.v(tag, "ON!");
 
-        if (powerManager != null) {
-            wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, tag + ":wakeLockTag");
+        if (wakeLock != null) {
             wakeLock.acquire();
             wakeLock.release();
         }
 
+
+        KeyguardManager.KeyguardLock keyLock = keyguardManager.newKeyguardLock("unlock");
+        keyLock.disableKeyguard();
+
+
+        PowerManager.WakeLock wl = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.FULL_WAKE_LOCK, tag + ":bright");
+
+        wl.acquire();
+        wl.release();
+
     }
 
     public void turnOffScreen() {
+        Log.v(tag, "Off!");
         policyManager.lockNow();
     }
 }
