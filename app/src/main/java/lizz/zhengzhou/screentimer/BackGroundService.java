@@ -36,7 +36,9 @@ public class BackGroundService extends Service {
         policyManager = (DevicePolicyManager) this.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
         keyguardManager = (KeyguardManager)this.getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
 
-        wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, tag + ":wakeLockTag");
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag + ":wakeLockTag");
+        wakeLock.acquire();
+
     }
 
     @Override
@@ -77,23 +79,19 @@ public class BackGroundService extends Service {
     @Override
     public void onDestroy() {
         CanRun = false;
+        wakeLock.release();
+
         super.onDestroy();
     }
 
     public void turnOnScreen() {
         Log.v(tag, "ON!");
 
-        if (wakeLock != null) {
-            wakeLock.acquire();
-            wakeLock.release();
-        }
-
-
         KeyguardManager.KeyguardLock keyLock = keyguardManager.newKeyguardLock("unlock");
         keyLock.disableKeyguard();
 
 
-        PowerManager.WakeLock wl = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.FULL_WAKE_LOCK, tag + ":bright");
+        PowerManager.WakeLock wl = powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.FULL_WAKE_LOCK, "bright");
 
         wl.acquire();
         wl.release();
